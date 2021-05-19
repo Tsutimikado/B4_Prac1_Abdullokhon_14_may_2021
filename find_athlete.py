@@ -4,22 +4,40 @@ from sqlalchemy.ext.declarative import declarative_base
 from users import lets_connect
 from users import request_data as ask
 from users import User
-
+import datetime
 
 DB_PATH = "sqlite:///sochi_athletes.sqlite3"
 Base=declarative_base()
 
-lets_connect()
+class Athelete(Base):
 
-def date_convert(date): #переводит дату в формат подобный datastamp. 
-    split_=date.split('.')
-    newdate=int(split_[0])+int(split_[1])*31+int(split_[2])*372
+    __tablename__ = 'athelete'
+    id = sa.Column(sa.Integer, primary_key=True)
+    age = sa.Column(sa.Integer)
+    birthdate = sa.Column(sa.Text)
+    gender = sa.Column(sa.Text)
+    height = sa.Column(sa.Float)
+    weight = sa.Column(sa.Integer)
+    name = sa.Column(sa.Text)
+    gold_medals = sa.Column(sa.Integer)
+    silver_medals = sa.Column(sa.Integer)
+    bronze_medals = sa.Column(sa.Integer)
+    total_medals = sa.Column(sa.Integer)
+    sport = sa.Column(sa.Text)
+    country = sa.Column(sa.Text)
+
+def date_convert(date): #переводит дату(text) в формат datetime.date 
+    if "-" in date:
+        split_=date.split('-')
+    else:
+        split_=date.split('.') #Да, я мог поменять тип ввода в своей программе и не создавать новые условия, но мне хочется оставить всё так.
+    newdate=datetime.date(*map(int,split_))
     return newdate
 
-    #31 december 2000, 1 january 2001, 25 december 2000 ? 
+    #1 march 2000 28 february 26 february
 
 def near_brn(u_bd,all_bd): #Получает дату рождения и список всех дат, чтобы найти ближайшего. 
-    dif=1100000
+    dif=abs(u_bd-datetime.date(2077, 12, 10)) #Атсылоччччка
     did=None
     for iid,iter_  in all_bd.items():
         if abs(u_bd-iter_)<dif:
@@ -31,9 +49,10 @@ def near_height(u_h, all_h):
     dif=1100000
     did=None
     for iid,iter_  in all_h.items():
-        if abs(float(u_h)-float(iter_))<dif:
-            dif=abs(float(u_h)-float(iter_))
-            did=iid
+        if iter_ is not None:
+            if abs(float(u_h)-float(iter_))<dif:
+                dif=abs(float(u_h)-float(iter_))
+                did=iid
     return did, round(dif,2)
 
 def find_user(session):
@@ -57,7 +76,7 @@ def main():
         find_true,name, in_id,height,bd =find_user(session)
 
 
-    query_all=session.query(User)
+    query_all=session.query(Athelete)
        
     user_heights={}
     user_bds={}
@@ -70,8 +89,8 @@ def main():
         user_heights[a]=b
     del user_heights[int(in_id)]
     n_ih,n_hd = near_height(height, user_heights)
-    query = session.query(User).filter(User.id == n_ih)
-    name_height=[user.first_name for user in query.all()][0]
+    query = session.query(Athelete).filter(Athelete.id == n_ih)
+    name_height=[user.name for user in query.all()][0]
     print ("Рост участника #{id} {name_height} отличатеся от {name_u} всего на {dif} метра".format(id=n_ih, name_height=name_height, name_u=name, dif=n_hd))
     
     user_bds_list=[user.birthdate for user in query_all.all()]
@@ -79,8 +98,8 @@ def main():
         user_bds[a]=date_convert(b)
     del user_bds[int(in_id)]
     n_ib=near_brn(bd,user_bds)
-    query = session.query(User).filter(User.id == n_ib)
-    name_birth=[user.first_name for user in query.all()][0]
+    query = session.query(Athelete).filter(Athelete.id == n_ib)
+    name_birth=[user.name for user in query.all()][0]
     print ("#{id} {b_name} и {u_name} почти ровестники!".format(id=n_ib, b_name=name_birth,u_name=name) )
 
 if __name__=='__main__':
